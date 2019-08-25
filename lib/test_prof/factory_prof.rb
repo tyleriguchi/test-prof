@@ -14,10 +14,11 @@ module TestProf
 
     # FactoryProf configuration
     class Configuration
-      attr_accessor :mode
+      attr_accessor :mode, :sort_by
 
       def initialize
         @mode = ENV["FPROF"] == "flamegraph" ? :flamegraph : :simple
+        @sort_by = :total_count
       end
 
       # Whether we want to generate flamegraphs
@@ -27,17 +28,18 @@ module TestProf
     end
 
     class Result # :nodoc:
-      attr_reader :stacks, :raw_stats
+      attr_reader :stacks, :raw_stats, :sort_by
 
-      def initialize(stacks, raw_stats)
+      def initialize(stacks, raw_stats, sort_by)
         @stacks = stacks
         @raw_stats = raw_stats
+        @sort_by = sort_by
       end
 
       # Returns sorted stats
       def stats
         @stats ||= @raw_stats.values
-          .sort_by { |el| -el[:total_count] }
+          .sort_by { |el| -el[@sort_by] }
       end
 
       def total_count
@@ -99,7 +101,7 @@ module TestProf
       end
 
       def result
-        Result.new(@stacks, @stats)
+        Result.new(@stacks, @stats, @config.sort_by)
       end
 
       def track(factory)
